@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Byte ⇄ AOB Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a1a1a 100%);
+            font-family: 'Consolas', 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            perspective: 1500px;
+            overflow-x: hidden;
+        }
+
+        .discord-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: linear-gradient(145deg, #5865F2, #4752C4);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 8px 16px rgba(88, 101, 242, 0.4),
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            transform: translateZ(20px);
+            text-decoration: none;
+        }
+
+        .discord-link:hover {
+            transform: translateZ(25px) scale(1.1);
+            box-shadow: 
+                0 12px 24px rgba(88, 101, 242, 0.6),
+                0 6px 12px rgba(0, 0, 0, 0.8),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }
+
+        .discord-logo {
+            width: 32px;
+            height: 32px;
+            fill: white;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
+        .glow-frame {
+            background: linear-gradient(45deg, #ff0000, #ff3838, #ff6666, #ff0000);
+            background-size: 300% 300%;
+            animation: glowPulse 3s ease-in-out infinite;
+            padding: 8px;
+            border-radius: 20px;
+            box-shadow: 
+                0 0 30px rgba(255, 0, 0, 0.8),
+                0 0 60px rgba(255, 0, 0, 0.6),
+                0 0 90px rgba(255, 0, 0, 0.4),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            transform: rotateX(5deg) rotateY(-2deg);
+            transition: all 0.3s ease;
+        }
+
+        .glow-frame:hover {
+            transform: rotateX(0deg) rotateY(0deg) scale(1.02);
+            box-shadow: 
+                0 0 40px rgba(255, 0, 0, 1),
+                0 0 80px rgba(255, 0, 0, 0.8),
+                0 0 120px rgba(255, 0, 0, 0.6),
+                inset 0 0 30px rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .container {
+            background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+            border-radius: 15px;
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            min-height: 550px;
+            position: relative;
+            box-shadow: 
+                inset 0 0 20px rgba(0, 0, 0, 0.8),
+                inset 0 0 40px rgba(0, 0, 0, 0.6);
+            transform-style: preserve-3d;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            transform: translateZ(20px);
+        }
+
+        .title {
+            color: #FF3C38;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-shadow: 
+                0 0 10px rgba(255, 60, 56, 0.8),
+                0 0 20px rgba(255, 60, 56, 0.6),
+                0 0 30px rgba(255, 60, 56, 0.4);
+            transform: translateZ(15px);
+            animation: titleFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes titleFloat {
+            0%, 100% { transform: translateZ(15px) translateY(0px); }
+            50% { transform: translateZ(15px) translateY(-5px); }
+        }
+
+        .subtitle {
+            color: #ff6666;
+            font-size: 12px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px rgba(255, 102, 102, 0.8);
+            transform: translateZ(10px);
+        }
+
+        .input-section {
+            margin-bottom: 25px;
+            transform: translateZ(10px);
+            transition: all 0.3s ease;
+        }
+
+        .input-section:hover {
+            transform: translateZ(15px);
+        }
+
+        .section-label {
+            color: #ff4444;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-align: left;
+            text-shadow: 0 0 5px rgba(255, 68, 68, 0.8);
+            transform: translateZ(5px);
+        }
+
+        .text-area {
+            width: 100%;
+            height: 90px;
+            background: linear-gradient(145deg, #2e2e2e, #1e1e1e);
+            color: #ffffff;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 11px;
+            resize: none;
+            margin-bottom: 12px;
+            box-shadow: 
+                inset 0 4px 8px rgba(0, 0, 0, 0.6),
+                inset 0 8px 16px rgba(0, 0, 0, 0.4),
+                0 2px 4px rgba(255, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+
+        .text-area:focus {
+            outline: none;
+            background: linear-gradient(145deg, #333333, #222222);
+            border: 2px solid #ff4444;
+            box-shadow: 
+                inset 0 4px 8px rgba(0, 0, 0, 0.8),
+                inset 0 8px 16px rgba(0, 0, 0, 0.6),
+                0 0 20px rgba(255, 68, 68, 0.6),
+                0 4px 8px rgba(255, 0, 0, 0.4);
+            transform: translateZ(5px);
+        }
+
+        .copy-btn {
+            background: linear-gradient(145deg, #333333, #111111);
+            color: white;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            margin-right: 15px;
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                0 2px 4px rgba(0, 0, 0, 0.8),
+                inset 0 1px 2px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            transform: translateZ(5px);
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(145deg, #444444, #222222);
+            box-shadow: 
+                0 6px 12px rgba(0, 0, 0, 0.8),
+                0 3px 6px rgba(0, 0, 0, 0.9),
+                inset 0 1px 2px rgba(255, 255, 255, 0.2);
+            transform: translateZ(8px) translateY(-2px);
+        }
+
+        .copy-btn:active {
+            transform: translateZ(2px) translateY(1px);
+            box-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.8),
+                0 1px 2px rgba(0, 0, 0, 0.9);
+        }
+
+        .convert-btn {
+            background: linear-gradient(145deg, #ff4444, #cc0000);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: block;
+            margin: 30px auto;
+            box-shadow: 
+                0 8px 16px rgba(0, 0, 0, 0.6),
+                0 4px 8px rgba(255, 0, 0, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            transform: translateZ(15px);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .convert-btn:hover {
+            background: linear-gradient(145deg, #ff6666, #ff0000);
+            box-shadow: 
+                0 12px 24px rgba(0, 0, 0, 0.8),
+                0 6px 12px rgba(255, 0, 0, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            transform: translateZ(20px) translateY(-3px);
+        }
+
+        .convert-btn:active {
+            transform: translateZ(10px) translateY(1px);
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.8),
+                0 2px 4px rgba(255, 0, 0, 0.6);
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateZ(5px);
+            color: #ff6666;
+            font-size: 9px;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(255, 102, 102, 0.6);
+        }
+
+        .success-message {
+            color: #00ff88;
+            font-size: 9px;
+            margin-left: 10px;
+            opacity: 0;
+            transition: all 0.5s ease;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+            transform: translateZ(8px);
+        }
+
+        .success-message.show {
+            opacity: 1;
+            transform: translateZ(12px) translateY(-3px);
+        }
+
+        .floating-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            border-radius: 15px;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(255, 68, 68, 0.6);
+            border-radius: 50%;
+            animation: float 6s infinite linear;
+            box-shadow: 0 0 6px rgba(255, 68, 68, 0.8);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.1;
+        }
+    </style>
+</head>
+<body>
+    <canvas class="matrix-bg" id="matrixCanvas"></canvas>
+    
+    <!-- Discord Link -->
+    <a href="#" class="discord-link" id="discordLink">
+        <svg class="discord-logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0189 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
+        </svg>
+    </a>
+    
+    <div class="glow-frame">
+        <div class="container">
+            <div class="floating-particles" id="particles"></div>
+            
+            <div class="header">
+                <div class="title">Byte ⇄ AOB Converter</div>
+                <div class="subtitle">by SULTAN CHEAT</div>
+            </div>
+
+            <div class="input-section">
+                <div class="section-label">AOB Input</div>
+                <textarea id="aobInput" class="text-area" placeholder=""></textarea>
+                <button class="copy-btn" onclick="copyAOB()">COPY AOB</button>
+                <span id="aobCopyMsg" class="success-message">Copied!</span>
+            </div>
+
+            <div class="input-section">
+                <div class="section-label">Byte Array Output</div>
+                <textarea id="byteOutput" class="text-area" placeholder=""></textarea>
+                <button class="copy-btn" onclick="copyBytes()">COPY BYTES</button>
+                <span id="bytesCopyMsg" class="success-message">Copied!</span>
+            </div>
+
+            <button class="convert-btn" onclick="convertBidirectional()">Convert ⇄</button>
+
+            <div class="footer">© 2025 SULTAN CHEAT. All rights reserved.</div>
+        </div>
+    </div>
+
+    <script>
+        // Set your Discord link here
+        document.getElementById('discordLink').href = 'https://discord.gg/D6CVhjcmxN';
+
+        // Matrix background effect
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const chars = '01ABCDEF';
+        const charArray = chars.split('');
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+
+        const drops = [];
+        for(let x = 0; x < columns; x++) {
+            drops[x] = 1;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#ff4444';
+            ctx.font = fontSize + 'px consolas';
+
+            for(let i = 0; i < drops.length; i++) {
+                const text = charArray[Math.floor(Math.random() * charArray.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 100);
+
+        // Floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for(let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.animationDelay = Math.random() * 6 + 's';
+                    particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                    container.appendChild(particle);
+
+                    setTimeout(() => {
+                        if(particle.parentNode) {
+                            particle.parentNode.removeChild(particle);
+                        }
+                    }, 9000);
+                }, i * 300);
+            }
+        }
+
+        setInterval(createParticles, 6000);
+        createParticles();
+
+        // Converter functions
+        function aobToByteArray(aob) {
+            try {
+                const parts = aob.trim().split(/\s+/);
+                const validParts = parts.filter(p => p.length === 2 && /^[0-9A-Fa-f]{2}$/.test(p));
+                return validParts.map(p => `0x${p.toUpperCase()}`).join(', ');
+            } catch (e) {
+                return `Error: ${e.message}`;
+            }
+        }
+
+        function byteArrayToAOB(byteArray) {
+            try {
+                const cleaned = byteArray.replace(/0x/g, '').replace(/,/g, ' ');
+                const parts = cleaned.trim().split(/\s+/);
+                const validParts = parts.filter(p => p.length === 2 && /^[0-9A-Fa-f]{2}$/.test(p));
+                return validParts.map(p => p.toUpperCase()).join(' ');
+            } catch (e) {
+                return `Error: ${e.message}`;
+            }
+        }
+
+        function convertToBytes() {
+            const input = document.getElementById('aobInput').value;
+            const output = aobToByteArray(input);
+            document.getElementById('byteOutput').value = output;
+        }
+
+        function convertToAOB() {
+            const input = document.getElementById('byteOutput').value;
+            const output = byteArrayToAOB(input);
+            document.getElementById('aobInput').value = output;
+        }
+
+        function convertBidirectional() {
+            const aobInput = document.getElementById('aobInput').value.trim();
+            const byteInput = document.getElementById('byteOutput').value.trim();
+            
+            if (aobInput && !byteInput) {
+                convertToBytes();
+            } else if (byteInput && !aobInput) {
+                convertToAOB();
+            } else if (aobInput) {
+                convertToBytes();
+            }
+        }
+
+        function copyAOB() {
+            const text = document.getElementById('aobInput').value;
+            navigator.clipboard.writeText(text).then(() => {
+                showCopyMessage('aobCopyMsg');
+            });
+        }
+
+        function copyBytes() {
+            const text = document.getElementById('byteOutput').value;
+            navigator.clipboard.writeText(text).then(() => {
+                showCopyMessage('bytesCopyMsg');
+            });
+        }
+
+        function showCopyMessage(elementId) {
+            const msg = document.getElementById(elementId);
+            msg.classList.add('show');
+            setTimeout(() => {
+                msg.classList.remove('show');
+            }, 1500);
+        }
+
+        // Auto-convert as user types
+        document.getElementById('aobInput').addEventListener('input', function() {
+            if (this.value.trim()) {
+                convertToBytes();
+            }
+        });
+
+        document.getElementById('byteOutput').addEventListener('input', function() {
+            if (this.value.trim()) {
+                convertToAOB();
+            }
+        });
+
+        // Add sample data for demonstration
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('aobInput').value = '';
+            convertToBytes();
+        });
+
+        // Resize canvas on window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
